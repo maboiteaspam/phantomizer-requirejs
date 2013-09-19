@@ -3,25 +3,26 @@
 module.exports = function(grunt) {
 
     var requiresjs_handler = function(){
-        var requirejs = require('requirejs')
+        var requirejs = require('requirejs');
 
         var ph_libutil = require("phantomizer-libutil");
-        var meta = ph_libutil.meta;
+        var meta_factory = ph_libutil.meta;
 
-        var wd = process.cwd()
-        var meta_manager = new meta( wd )
+        var wd = process.cwd();
 
         var options = this.options({
             logLevel: 4 //SILENT
         });
 
-        var out_file = options.out
-        var meta_file = options.meta
-        var meta_dir = options.meta_dir
-        var src_paths = options.src_paths || []
-        grunt.verbose.writeflags(options, 'Options')
+        var out_file = options.out;
+        var meta_file = options.meta_file;
+        var meta_dir = options.meta_dir;
+        var src_paths = options.src_paths || [];
+        grunt.verbose.writeflags(options, 'Options');
 
-        if( meta_manager.is_fresh(options.meta) == false ){
+
+        var meta_manager = new meta_factory( wd, meta_dir );
+        if( meta_manager.is_fresh(meta_file) == false ){
 
             var entry = meta_manager.create([])
 
@@ -37,8 +38,8 @@ module.exports = function(grunt) {
                 }
             }
 
-            var current_grunt_task = this.nameArgs
-            var current_grunt_opt = this.options()
+            var current_grunt_task = this.nameArgs;
+            var current_grunt_opt = this.options();
 
 
             delete options.src_paths;
@@ -51,16 +52,16 @@ module.exports = function(grunt) {
             requirejs.optimize(rjs_options, function(response) {
                 try{
                     var do_log = false;
-                    var lines = response.split("\n")
+                    var lines = response.split("\n");
                     for( var n in lines ){
-                        var msg = lines[n]
+                        var msg = lines[n];
                         if( msg == "----------------" ){
-                            do_log = true
+                            do_log = true;
                             // in_file = lines[n-1]
                         }else if( do_log && msg != "" ){
-                            var p_meta_file = find_abs_request(src_paths, msg)
+                            var p_meta_file = find_abs_request(src_paths, msg);
                             if( p_meta_file != false && grunt.file.exists(meta_dir+p_meta_file+".meta") ){
-                                var p_html_entry = meta_manager.load(meta_dir+p_meta_file+".meta")
+                                var p_html_entry = meta_manager.load(p_meta_file+".meta")
                                 entry.load_dependencies(p_html_entry.dependences)
                             }else{
                                 entry.load_dependencies([msg])
@@ -69,11 +70,11 @@ module.exports = function(grunt) {
                     }
 
                     if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-                        entry.load_dependencies([process.cwd()+"/Gruntfile.js"])
+                        entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
                     }
-                    entry.load_dependencies([__filename])
+                    entry.load_dependencies([__filename]);
 
-                    entry.require_task(current_grunt_task, current_grunt_opt)
+                    entry.require_task(current_grunt_task, current_grunt_opt);
                     entry.save(meta_file, function(err){
                         if (err) finish(false, err);
                         else finish(true, "Created "+out_file);
@@ -95,20 +96,21 @@ module.exports = function(grunt) {
         //-
         var ph_libutil = require("phantomizer-libutil");
         var HtmlUtils = ph_libutil.html_utils;
-        var MetaFactory = ph_libutil.meta;
-        var MetaManager = new MetaFactory( process.cwd() )
+        var meta_factory = ph_libutil.meta;
 
         var options = this.options();
 
-        var paths = options.paths || false
-        var out_file = options.out_file || false
-        var meta_file = options.meta_file || false
-        var meta_dir = options.meta_dir || false
+        var paths = options.paths || false;
+        var out_file = options.out_file || false;
+        var meta_file = options.meta_file || false;
+        var meta_dir = options.meta_dir || false;
 
-        var in_request  = options.in_request || false
-        var in_file     = must_find_in_paths(paths, in_request)
-        var base_url    = find_base_url(paths, in_request)
-        var abs_url     = find_abs_request(paths, in_request)
+        var MetaManager = new meta_factory( process.cwd(), meta_dir );
+
+        var in_request  = options.in_request || false;
+        var in_file     = must_find_in_paths(paths, in_request);
+        var base_url    = find_base_url(paths, in_request);
+        var abs_url     = find_abs_request(paths, in_request);
 
         var map = options.map || {
             /*
@@ -119,16 +121,16 @@ module.exports = function(grunt) {
                 }
              */
         }
-        grunt.verbose.writeflags(options, 'Options')
+        grunt.verbose.writeflags(options, 'Options');
 
         if( MetaManager.is_fresh(meta_file) == false ){
 
-            var css_content = grunt.file.read(in_file)
-            var entry = MetaManager.create([])
-            var p_meta_file = find_in_paths([meta_dir], abs_url+".meta")
-            if( p_meta_file != false ){
-                var p_html_entry = MetaManager.load( p_meta_file )
-                entry.load_dependencies(p_html_entry.dependences)
+            var css_content = grunt.file.read(in_file);
+            var entry = MetaManager.create([]);
+            var p_meta_file = abs_url+".meta";
+            if(  MetaManager.has( p_meta_file ) ){
+                var p_html_entry = MetaManager.load( p_meta_file );
+                entry.load_dependencies(p_html_entry.dependences);
             }else{
                 entry.load_dependencies([in_file])
             }
@@ -146,7 +148,7 @@ module.exports = function(grunt) {
                                 var r = new RegExp("background\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
                                 var matches = node.img.match(r)
                                 if( matches != null ){
-                                    var img_meta = MetaManager.load(meta_dir+tgt_img+".meta")
+                                    var img_meta = MetaManager.load(tgt_img+".meta")
 
                                     entry.load_dependencies(img_meta.dependences)
 
@@ -181,18 +183,18 @@ module.exports = function(grunt) {
                 }
             }
 
-            var current_grunt_task = this.nameArgs
-            var current_grunt_opt = this.options()
+            var current_grunt_task = this.nameArgs;
+            var current_grunt_opt = this.options();
             if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-                entry.load_dependencies([process.cwd()+"/Gruntfile.js"])
+                entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
             }
-            entry.load_dependencies([in_file, __filename])
+            entry.load_dependencies([in_file, __filename]);
 
-            entry.require_task(current_grunt_task, current_grunt_opt)
-            entry.save(meta_file)
+            entry.require_task(current_grunt_task, current_grunt_opt);
+            entry.save(meta_file);
 
-            grunt.file.write(out_file, css_content)
-            grunt.log.ok("Created "+out_file)
+            grunt.file.write(out_file, css_content);
+            grunt.log.ok("Created "+out_file);
 
         }else{
             grunt.log.ok("the build is fresh")
