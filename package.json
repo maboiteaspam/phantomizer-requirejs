@@ -1,0 +1,23 @@
+{
+    "name": "phantomizer-requirejs",
+    "version": "0.1.0",
+    "private": true,
+    "description": "RequireJS optimization support for phantomizer",
+    "keywords": "",
+    "bugs": {
+        "url" : "http://github.com/maboiteaspam/phantomizer-requirejs/issues",
+        "email" : "none@host.com"
+    },
+    "license" : "mit",
+    "repository" :{
+        "type" : "git",
+        "url" : "http://github.com/maboiteaspam/phantomizer-requirejs.git"
+    },
+    "dependencies": {
+        "grunt": "0.4.x",
+        "requirejs": "2.1.x"
+        ,"phantomizer-libutil": "http://github.com/maboiteaspam/phantomizer-libutil.git"
+    },
+    "devDependencies": {
+    }
+}
