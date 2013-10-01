@@ -7,6 +7,7 @@ module.exports = function(grunt) {
 
         var ph_libutil = require("phantomizer-libutil");
         var meta_factory = ph_libutil.meta;
+        var user_config = grunt.config();
 
         var wd = process.cwd();
 
@@ -72,6 +73,9 @@ module.exports = function(grunt) {
                     if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
                         entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
                     }
+                    if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
+                        entry.load_dependencies([user_config.project_dir+"/../config.json"]);
+                    }
                     entry.load_dependencies([__filename]);
 
                     entry.require_task(current_grunt_task, current_grunt_opt);
@@ -99,6 +103,7 @@ module.exports = function(grunt) {
         var meta_factory = ph_libutil.meta;
 
         var options = this.options();
+        var user_config = grunt.config();
 
         var paths = options.paths || false;
         var out_file = options.out_file || false;
@@ -187,6 +192,9 @@ module.exports = function(grunt) {
             var current_grunt_opt = this.options();
             if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
                 entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
+            }
+            if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
+                entry.load_dependencies([user_config.project_dir+"/../config.json"]);
             }
             entry.load_dependencies([in_file, __filename]);
 
