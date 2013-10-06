@@ -1,6 +1,11 @@
 'use strict';
 
 module.exports = function(grunt) {
+    //-
+    var ph_libutil = require("phantomizer-libutil");
+    var path = require("path");
+    var HtmlUtils = ph_libutil.html_utils;
+    var meta_factory = ph_libutil.meta;
 
     var requiresjs_handler = function(){
         var requirejs = require('requirejs');
@@ -20,7 +25,6 @@ module.exports = function(grunt) {
         var meta_dir = options.meta_dir;
         var src_paths = options.src_paths || [];
         grunt.verbose.writeflags(options, 'Options');
-
 
         var meta_manager = new meta_factory( wd, meta_dir );
         if( meta_manager.is_fresh(meta_file) == false ){
@@ -88,7 +92,7 @@ module.exports = function(grunt) {
                 }
             });
         }else{
-            grunt.log.ok("the build is fresh")
+            grunt.log.ok("the build is fresh\n\t"+out_file)
         }
     }
 
@@ -205,12 +209,124 @@ module.exports = function(grunt) {
             grunt.log.ok("Created "+out_file);
 
         }else{
-            grunt.log.ok("the build is fresh")
+            grunt.log.ok("the build is fresh\n\t"+in_file)
+        }
+    });
+
+    grunt.registerMultiTask("phantomizer-dir-css-imgmerge", "Directory Merge image for css", function(){
+
+        var options = this.options();
+
+        var paths = options.paths || false;
+        var out_dir = options.out_dir || false;
+        var meta_dir = options.meta_dir || false;
+
+        var MetaManager = new meta_factory( process.cwd(), meta_dir );
+
+        var map = options.map || {
+            /*
+             abs_tgt_img_url:[
+             file_path_component
+             ,file_path_component1
+             ,file_path_component2
+             }
+             */
         }
 
+        var current_grunt_task = this.nameArgs;
+        var current_grunt_opt = this.options();
 
-
+        for( var n in paths ){
+            var p = paths[n];
+            var css = grunt.file.expand(p+"**/*.css");
+            for( var k in css ){
+                var css_file = css[k];
+                var out_file = out_dir+"/"+path.relative(p, css_file);
+                img_merge_css_file(MetaManager, css_file, out_file, p, map, paths,current_grunt_task,current_grunt_opt);
+            }
+        }
     });
+
+
+    function img_merge_css_file(MetaManager, in_file, out_file, base_url, map, paths,current_grunt_task,current_grunt_opt){
+        var user_config = grunt.config();
+        var css_content = grunt.file.read(in_file);
+        var entry = MetaManager.create([]);
+
+        var abs_url = "/"+path.relative(base_url, in_file);
+        var css_base_url = path.dirname(abs_url)+"/";
+
+        var p_html_entry = MetaManager.load( abs_url+".meta" );
+        entry.load_dependencies(p_html_entry.dependences);
+
+        css_content = apply_img_merge(css_content, css_base_url+base_url, map, paths, entry);
+
+        if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
+            entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
+        }
+        if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
+            entry.load_dependencies([user_config.project_dir+"/../config.json"]);
+        }
+        entry.load_dependencies([in_file, __filename]);
+
+        entry.require_task(current_grunt_task, current_grunt_opt);
+        entry.save(abs_url+".meta");
+
+        grunt.file.write(out_file, css_content);
+    }
+    function apply_img_merge(css_content, base_url, map, paths, entry){
+
+        var img_rules = HtmlUtils.find_img_rules(css_content, base_url);
+        for( var n in img_rules ){
+            var node = img_rules[n]
+            var css_img_f = must_find_in_paths(paths, node.asrc);
+
+            if( css_img_f != false ){
+                for( var tgt_img in map ){
+                    for( var k in map[tgt_img] ){
+                        var file_component = map[tgt_img][k];
+                        if( file_component == css_img_f ){
+                            // background:url('http://biscuithead.ie/images/logo.png') center no-repeat;
+                            var r = new RegExp("background\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
+                            var matches = node.img.match(r)
+                            if( matches != null ){
+                                var img_meta = MetaManager.load(tgt_img+".meta")
+
+                                entry.load_dependencies(img_meta.dependences)
+
+                                var x = img_meta.extras.map[file_component].x;
+                                var y = img_meta.extras.map[file_component].y;
+
+                                var n_rule = matches[0]
+
+                                // must be done in reverse order
+                                var oy = 0
+                                if( matches[4] ){
+                                    oy = parseFloat(matches[4])
+                                    n_rule = n_rule.replace(r[4], "-"+(y+oy)+"px")
+                                }else{
+                                    n_rule = n_rule.replace(matches[1], matches[1]+"  -"+(y+oy)+"px")
+                                }
+                                var ox = 0
+                                if( matches[3] ){
+                                    ox = parseFloat(matches[3])
+                                    n_rule = n_rule.replace(matches[3], "-"+(x+ox)+"px")
+                                }else{
+                                    n_rule = n_rule.replace(matches[1], matches[1]+"  -"+(x+ox)+"px")
+                                }
+
+                                n_rule = n_rule.replace(node.src, "/"+tgt_img)
+
+                                css_content = css_content.replace(matches[0], n_rule)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return css_content;
+    }
 
 
 
