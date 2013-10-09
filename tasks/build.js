@@ -243,8 +243,10 @@ module.exports = function(grunt) {
                 var css_file = css[k];
                 var out_file = out_dir+"/"+path.relative(p, css_file);
                 img_merge_css_file(MetaManager, css_file, out_file, p, map, paths,current_grunt_task,current_grunt_opt);
+
             }
         }
+        grunt.log.ok();
     });
 
 
@@ -259,43 +261,47 @@ module.exports = function(grunt) {
         var p_html_entry = MetaManager.load( abs_url+".meta" );
         entry.load_dependencies(p_html_entry.dependences);
 
-        css_content = apply_img_merge(css_content, css_base_url+base_url, map, paths, entry);
+        var new_css_content = apply_img_merge(MetaManager, css_content, css_base_url, map, paths, entry);
 
-        if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-            entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
+        if( new_css_content != css_content ){
+            if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
+                entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
+            }
+            if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
+                entry.load_dependencies([user_config.project_dir+"/../config.json"]);
+            }
+            entry.load_dependencies([in_file, __filename]);
+
+            entry.require_task(current_grunt_task, current_grunt_opt);
+            entry.save(abs_url+".meta");
+
+            grunt.file.write(out_file, css_content);
+            grunt.log.ok("File parsed\n\t"+out_file)
         }
-        if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
-            entry.load_dependencies([user_config.project_dir+"/../config.json"]);
-        }
-        entry.load_dependencies([in_file, __filename]);
-
-        entry.require_task(current_grunt_task, current_grunt_opt);
-        entry.save(abs_url+".meta");
-
-        grunt.file.write(out_file, css_content);
     }
-    function apply_img_merge(css_content, base_url, map, paths, entry){
+    function apply_img_merge(MetaManager, css_content, base_url, map, paths, entry){
 
         var img_rules = HtmlUtils.find_img_rules(css_content, base_url);
         for( var n in img_rules ){
-            var node = img_rules[n]
+            var node = img_rules[n];
+            var css_img_asrc = node.asrc;
             var css_img_f = must_find_in_paths(paths, node.asrc);
 
             if( css_img_f != false ){
                 for( var tgt_img in map ){
                     for( var k in map[tgt_img] ){
                         var file_component = map[tgt_img][k];
-                        if( file_component == css_img_f ){
+                        if( file_component == css_img_asrc ){
                             // background:url('http://biscuithead.ie/images/logo.png') center no-repeat;
-                            var r = new RegExp("background\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
+                            var r = new RegExp("background(-image)?\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
                             var matches = node.img.match(r)
                             if( matches != null ){
                                 var img_meta = MetaManager.load(tgt_img+".meta")
 
-                                entry.load_dependencies(img_meta.dependences)
+                                entry.load_dependencies(img_meta.dependences);
 
-                                var x = img_meta.extras.map[file_component].x;
-                                var y = img_meta.extras.map[file_component].y;
+                                var x = img_meta.extras.map[css_img_f].x;
+                                var y = img_meta.extras.map[css_img_f].y;
 
                                 var n_rule = matches[0]
 
@@ -317,7 +323,7 @@ module.exports = function(grunt) {
 
                                 n_rule = n_rule.replace(node.src, "/"+tgt_img)
 
-                                css_content = css_content.replace(matches[0], n_rule)
+                                css_content = css_content.replace(matches[0], n_rule);
                             }
                         }
                     }
