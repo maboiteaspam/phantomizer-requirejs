@@ -135,14 +135,19 @@ module.exports = function(grunt) {
         if( MetaManager.is_fresh(meta_file) == false ){
 
             var css_content = grunt.file.read(in_file);
+
             var entry = MetaManager.create([]);
             var p_meta_file = abs_url+".meta";
             if(  MetaManager.has( p_meta_file ) ){
                 var p_html_entry = MetaManager.load( p_meta_file );
                 entry.load_dependencies(p_html_entry.dependences);
-            }else{
-                entry.load_dependencies([in_file])
+                for(var k in p_html_entry.build){
+                    var p_task_name = p_html_entry.build[k];
+                    var p_task_opt = p_html_entry.tasks_opts[p_task_name];
+                    entry.require_task(p_task_name, p_task_opt);
+                }
             }
+            entry.load_dependencies([in_file])
 
             var img_rules = HtmlUtils.find_img_rules(css_content, base_url)
             for( var n in img_rules ){
