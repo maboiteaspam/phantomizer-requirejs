@@ -1,6 +1,6 @@
 {
     "name": "phantomizer-requirejs",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "private": true,
     "description": "RequireJS optimization support for phantomizer",
     "keywords": "",
