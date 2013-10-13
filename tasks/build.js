@@ -241,6 +241,8 @@ module.exports = function(grunt) {
         var current_grunt_task = this.nameArgs;
         var current_grunt_opt = this.options();
 
+        if( paths.toLowerCase)paths=[paths]
+
         for( var n in paths ){
             var p = paths[n];
             var css = grunt.file.expand(p+"**/*.css");
@@ -281,7 +283,9 @@ module.exports = function(grunt) {
             entry.save(abs_url+".meta");
 
             grunt.file.write(out_file, css_content);
-            grunt.log.ok("File parsed\n\t"+out_file)
+            grunt.log.ok("File parsed\n\t"+out_file);
+        }else{
+            grunt.log.ok("Nothing to change\n\t"+out_file);
         }
     }
     function apply_img_merge(MetaManager, css_content, base_url, map, paths, entry){
