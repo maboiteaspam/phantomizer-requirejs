@@ -2,7 +2,7 @@
     "name": "phantomizer-requirejs",
     "version": "0.1.8",
     "private": true,
-    "description": "RequireJS optimization support for phantomizer",
+    "description": "RequireJS optimization support for phantomizer test",
     "keywords": "",
     "bugs": {
         "url": "http://github.com/maboiteaspam/phantomizer-requirejs/issues",
