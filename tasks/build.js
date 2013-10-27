@@ -2,26 +2,34 @@
 
 module.exports = function(grunt) {
     //-
-    var ph_libutil = require("phantomizer-libutil");
-    var path = require("path");
-    var HtmlUtils = ph_libutil.html_utils;
-    var meta_factory = ph_libutil.meta;
+    var ph_libutil  = require("phantomizer-libutil");
+    var path        = require("path");
+    var requirejs   = require('requirejs');
+
+    var HtmlUtils       = ph_libutil.html_utils;
+    var meta_factory    = ph_libutil.meta;
 
     var requiresjs_handler = function(){
-        var requirejs = require('requirejs');
-
-        var ph_libutil = require("phantomizer-libutil");
-        var meta_factory = ph_libutil.meta;
-        var user_config = grunt.config();
 
         var wd = process.cwd();
 
         var options = this.options({
-            logLevel: 4 //SILENT
+            src_paths: [],
+            project_dir: '',
+            vendors_path: '',
+            almond_path: '',
+            meta_dir: '',
+            meta_file: '',
+
+            out: '',
+            logLevel: 4
         });
 
         var out_file = options.out;
         var meta_file = options.meta_file;
+        var vendors_path = options.vendors_path;
+        var almond_path = options.almond_path;
+        var project_dir = options.project_dir;
         var meta_dir = options.meta_dir;
         var src_paths = options.src_paths || [];
         grunt.verbose.writeflags(options, 'Options');
@@ -47,40 +55,41 @@ module.exports = function(grunt) {
             var current_grunt_opt = this.options();
 
 
-            delete options.src_paths;
-            delete options.meta_dir;
-            delete options.meta;
+            var excluded_options = [
+                'src_paths',
+                'project_dir',
+                'almond_path',
+                'vendors_path',
+                'meta_dir',
+                'meta_file'
+            ];
             var rjs_options = {}
             for( var n in options ){
-                rjs_options[n] = options[n]
+                if( excluded_options.indexOf(n) == -1 )
+                    rjs_options[n] = options[n]
             }
+            if( rjs_options.name=="almond" ){
+                if(!rjs_options.paths)rjs_options.paths ={};
+                if( !rjs_options.paths["almond"] && almond_path )
+                    rjs_options.paths["almond"] = almond_path;
+                if( !rjs_options.paths["vendors"] && vendors_path )
+                    rjs_options.paths["vendors"] = vendors_path;
+            }
+
             requirejs.optimize(rjs_options, function(response) {
                 try{
-                    var do_log = false;
-                    var lines = response.split("\n");
+                    var lines = parse_output(response);
                     for( var n in lines ){
                         var msg = lines[n];
-                        if( msg == "----------------" ){
-                            do_log = true;
-                            // in_file = lines[n-1]
-                        }else if( do_log && msg != "" ){
-                            var p_meta_file = find_abs_request(src_paths, msg);
-                            if( p_meta_file != false && grunt.file.exists(meta_dir+p_meta_file+".meta") ){
-                                var p_html_entry = meta_manager.load(p_meta_file+".meta")
-                                entry.load_dependencies(p_html_entry.dependences)
-                            }else{
-                                entry.load_dependencies([msg])
-                            }
+                        var p_meta_file = find_abs_request(src_paths, msg);
+                        if( p_meta_file != false && grunt.file.exists(meta_dir+p_meta_file+".meta") ){
+                            var p_html_entry = meta_manager.load(p_meta_file+".meta")
+                            entry.load_dependencies(p_html_entry.dependences)
                         }
+                        entry.load_dependencies([msg])
                     }
 
-                    if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-                        entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
-                    }
-                    if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
-                        entry.load_dependencies([user_config.project_dir+"/../config.json"]);
-                    }
-                    entry.load_dependencies([__filename]);
+                    entry.load_dependencies([process.cwd()+"/Gruntfile.js",project_dir+"/../config.json",__filename]);
 
                     entry.require_task(current_grunt_task, current_grunt_opt);
                     entry.save(meta_file, function(err){
@@ -95,6 +104,22 @@ module.exports = function(grunt) {
             grunt.log.ok("the build is fresh\n\t"+out_file)
         }
     }
+
+    function parse_output(output){
+        var do_log = false;
+        var lines = output.split("\n");
+        output = [];
+        for( var n in lines ){
+            var msg = lines[n];
+            if( msg == "----------------" ){
+                do_log = true;
+            }else if( do_log && msg != "" ){
+                output.push(msg);
+            }
+        }
+        return output;
+    }
+
 
     grunt.registerMultiTask("phantomizer-requirejs", "Builds js dependencies of a requirejs file", requiresjs_handler);
 
