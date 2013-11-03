@@ -82,8 +82,8 @@ module.exports = function(grunt) {
                     for( var n in lines ){
                         var msg = lines[n];
                         var p_meta_file = find_abs_request(src_paths, msg);
-                        if( p_meta_file != false && grunt.file.exists(meta_dir+p_meta_file+".meta") ){
-                            var p_html_entry = meta_manager.load(p_meta_file+".meta")
+                        if( p_meta_file != false && grunt.file.exists(meta_dir+p_meta_file+"") ){
+                            var p_html_entry = meta_manager.load(p_meta_file+"")
                             entry.load_dependencies(p_html_entry.dependences)
                         }
                         entry.load_dependencies([msg])
@@ -162,7 +162,7 @@ module.exports = function(grunt) {
             var css_content = grunt.file.read(in_file);
 
             var entry = MetaManager.create([]);
-            var p_meta_file = abs_url+".meta";
+            var p_meta_file = abs_url+"";
             if(  MetaManager.has( p_meta_file ) ){
                 var p_html_entry = MetaManager.load( p_meta_file );
                 entry.load_dependencies(p_html_entry.dependences);
@@ -187,7 +187,7 @@ module.exports = function(grunt) {
                                 var r = new RegExp("background\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
                                 var matches = node.img.match(r)
                                 if( matches != null ){
-                                    var img_meta = MetaManager.load(tgt_img+".meta")
+                                    var img_meta = MetaManager.load(tgt_img+"")
 
                                     entry.load_dependencies(img_meta.dependences)
 
@@ -290,7 +290,7 @@ module.exports = function(grunt) {
         var abs_url = "/"+path.relative(base_url, in_file);
         var css_base_url = path.dirname(abs_url)+"/";
 
-        var p_html_entry = MetaManager.load( abs_url+".meta" );
+        var p_html_entry = MetaManager.load( abs_url+"" );
         entry.load_dependencies(p_html_entry.dependences);
 
         var new_css_content = apply_img_merge(MetaManager, css_content, css_base_url, map, paths, entry);
@@ -305,7 +305,7 @@ module.exports = function(grunt) {
             entry.load_dependencies([in_file, __filename]);
 
             entry.require_task(current_grunt_task, current_grunt_opt);
-            entry.save(abs_url+".meta");
+            entry.save(abs_url+"");
 
             grunt.file.write(out_file, css_content);
             grunt.log.ok("File parsed\n\t"+out_file);
@@ -330,7 +330,7 @@ module.exports = function(grunt) {
                             var r = new RegExp("background(-image)?\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
                             var matches = node.img.match(r)
                             if( matches != null ){
-                                var img_meta = MetaManager.load(tgt_img+".meta")
+                                var img_meta = MetaManager.load(tgt_img+"")
 
                                 entry.load_dependencies(img_meta.dependences);
 

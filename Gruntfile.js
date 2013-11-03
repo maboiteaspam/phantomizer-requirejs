@@ -29,7 +29,7 @@ module.exports = function(grunt) {
             ,test: {
                 "options":{
                     "out": "<%= out_dir %>/js/customer-ui-build.js"
-                    ,"meta": "<%= meta_dir %>/customer-ui-build.js.meta"
+                    ,"meta": "<%= meta_dir %>/customer-ui-build.js"
                     ,"include": ["customer-ui"]
                     ,"insertRequire": ["customer-ui"]
                 }
@@ -38,7 +38,7 @@ module.exports = function(grunt) {
                 options:{
                     "optimize": "uglify"
                     ,"out": "<%= out_dir %>/js/customer-ui-build-min.js"
-                    ,"meta": "<%= meta_dir %>/customer-ui-build-min.js.meta"
+                    ,"meta": "<%= meta_dir %>/customer-ui-build-min.js"
                     ,"include": ["customer-ui"]
                     ,"insertRequire": ["customer-ui"]
                 }
@@ -53,7 +53,7 @@ module.exports = function(grunt) {
                 "options":{
                     "cssIn": in_dir+"/css/header.css"
                     ,"out": "<%= out_dir %>/css/header-build.js"
-                    ,"meta": "<%= meta_dir %>/header-build.js.meta"
+                    ,"meta": "<%= meta_dir %>/header-build.js"
                     ,"picture_merge": {
                         'img-opt2.png':['img.png','img-2.png']
                     }
@@ -64,7 +64,7 @@ module.exports = function(grunt) {
                     "cssIn": in_dir+"/css/header.css"
                     ,"optimizeCss": "standard"
                     ,"out": "<%= out_dir %>/css/header-build-min.css"
-                    ,"meta": "<%= meta_dir %>/header-build-min.css.meta"
+                    ,"meta": "<%= meta_dir %>/header-build-min.css"
                 }
             }
         }
@@ -76,7 +76,7 @@ module.exports = function(grunt) {
                 "options":{
                     "in_request": "/css/header.css"
                     ,"out_file":"<%= out_dir %>/css/header-merge.css"
-                    ,"meta_file":"<%= meta_dir %>/css/heade-merger.css.meta"
+                    ,"meta_file":"<%= meta_dir %>/css/heade-merger.css"
                     ,"meta_dir":"<%= meta_dir %>"
                     ,"map": {
                         '/images/img-opt2.png':['/images/img.png','/images/img-2.png']
@@ -88,7 +88,7 @@ module.exports = function(grunt) {
                 options:{
                     "in_request": "/css/header.css"
                     ,"out_file":"<%= out_dir %>/css/header-merge.css"
-                    ,"meta_file":"<%= meta_dir %>/css/heade-merger.css.meta"
+                    ,"meta_file":"<%= meta_dir %>/css/heade-merger.css"
                     ,"meta_dir":"<%= meta_dir %>"
                     ,"map": {
                         '/images/img-opt2.png':['/images/img.png','/images/img-2.png']
