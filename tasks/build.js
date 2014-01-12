@@ -28,6 +28,7 @@ module.exports = function(grunt) {
         var out_file = options.out;
         var meta_file = options.meta_file;
         var vendors_path = options.vendors_path;
+        var wbm_path = options.wbm_path;
         var almond_path = options.almond_path;
         var project_dir = options.project_dir;
         var meta_dir = options.meta_dir;
@@ -68,12 +69,12 @@ module.exports = function(grunt) {
                 if( excluded_options.indexOf(n) == -1 )
                     rjs_options[n] = options[n]
             }
-            if( rjs_options.name=="almond" ){
-                if(!rjs_options.paths)rjs_options.paths ={};
-                if( !rjs_options.paths["almond"] && almond_path )
-                    rjs_options.paths["almond"] = almond_path;
-                if( !rjs_options.paths["vendors"] && vendors_path )
-                    rjs_options.paths["vendors"] = vendors_path;
+            if( rjs_options.paths ){
+                if( rjs_options.name=="almond" ){
+                    rjs_options.paths.almond = almond_path;
+                }
+                rjs_options.paths.vendors = vendors_path;
+                rjs_options.paths.wbm = wbm_path;
             }
 
             requirejs.optimize(rjs_options, function(response) {
