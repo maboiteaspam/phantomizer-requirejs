@@ -7,18 +7,14 @@ module.exports = function(grunt) {
     var requirejs   = require('requirejs');
 
     var HtmlUtils       = ph_libutil.html_utils;
-    var meta_factory    = ph_libutil.meta;
 
     var requiresjs_handler = function(){
-
-        var wd = process.cwd();
 
         var options = this.options({
             src_paths: [],
             project_dir: '',
             vendors_path: '',
             almond_path: '',
-            meta_dir: '',
             meta_file: '',
 
             out: '',
@@ -31,11 +27,15 @@ module.exports = function(grunt) {
         var wbm_path = options.wbm_path;
         var almond_path = options.almond_path;
         var project_dir = options.project_dir;
-        var meta_dir = options.meta_dir;
+
         var src_paths = options.src_paths || [];
         grunt.verbose.writeflags(options, 'Options');
 
-        var meta_manager = new meta_factory( wd, meta_dir );
+
+
+      var phantomizer = ph_libutil.get("main");
+      var meta_manager = phantomizer.get_meta_manager();
+
         if( meta_manager.is_fresh(meta_file) == false ){
 
             var entry = meta_manager.create([])
@@ -45,11 +45,10 @@ module.exports = function(grunt) {
             var finish = function(res, m){
                 if( res == true ){
                     grunt.log.ok(m)
-                    done(true);
                 }else{
                     grunt.log.error(m)
-                    done(false);
                 }
+              done(res == true);
             }
 
             var current_grunt_task = this.nameArgs;
@@ -61,7 +60,6 @@ module.exports = function(grunt) {
                 'project_dir',
                 'almond_path',
                 'vendors_path',
-                'meta_dir',
                 'meta_file'
             ];
             var rjs_options = {}
@@ -82,12 +80,9 @@ module.exports = function(grunt) {
                     var lines = parse_output(response);
                     for( var n in lines ){
                         var msg = lines[n];
-                        var p_meta_file = find_abs_request(src_paths, msg);
-                        if( p_meta_file != false && grunt.file.exists(meta_dir+p_meta_file+"") ){
-                            var p_html_entry = meta_manager.load(p_meta_file+"")
-                            entry.load_dependencies(p_html_entry.dependences)
-                        }
-                        entry.load_dependencies([msg])
+                        var p_html_entry = meta_manager.load(src_paths);
+                        entry.load_dependencies( p_html_entry.dependences );
+                        entry.load_dependencies([msg]);
                     }
 
                     entry.load_dependencies([process.cwd()+"/Gruntfile.js",project_dir+"/../config.json",__filename]);
@@ -128,9 +123,7 @@ module.exports = function(grunt) {
 
     grunt.registerMultiTask("phantomizer-css-imgmerge", "Merge image for css files", function(){
         //-
-        var ph_libutil = require("phantomizer-libutil");
         var HtmlUtils = ph_libutil.html_utils;
-        var meta_factory = ph_libutil.meta;
 
         var options = this.options();
         var user_config = grunt.config();
@@ -138,9 +131,10 @@ module.exports = function(grunt) {
         var paths = options.paths || false;
         var out_file = options.out_file || false;
         var meta_file = options.meta_file || false;
-        var meta_dir = options.meta_dir || false;
 
-        var MetaManager = new meta_factory( process.cwd(), meta_dir );
+
+      var phantomizer = ph_libutil.get("main");
+      var meta_manager = phantomizer.get_meta_manager();
 
         var in_request  = options.in_request || false;
         var in_file     = must_find_in_paths(paths, in_request);
@@ -158,14 +152,14 @@ module.exports = function(grunt) {
         }
         grunt.verbose.writeflags(options, 'Options');
 
-        if( MetaManager.is_fresh(meta_file) == false ){
+        if( meta_manager.is_fresh(meta_file) == false ){
 
             var css_content = grunt.file.read(in_file);
 
-            var entry = MetaManager.create([]);
+            var entry = meta_manager.create([]);
             var p_meta_file = abs_url+"";
-            if(  MetaManager.has( p_meta_file ) ){
-                var p_html_entry = MetaManager.load( p_meta_file );
+            if(  meta_manager.has( p_meta_file ) ){
+                var p_html_entry = meta_manager.load( p_meta_file );
                 entry.load_dependencies(p_html_entry.dependences);
                 for(var k in p_html_entry.build){
                     var p_task_name = p_html_entry.build[k];
@@ -188,7 +182,7 @@ module.exports = function(grunt) {
                                 var r = new RegExp("background\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
                                 var matches = node.img.match(r)
                                 if( matches != null ){
-                                    var img_meta = MetaManager.load(tgt_img+"")
+                                    var img_meta = meta_manager.load(tgt_img+"")
 
                                     entry.load_dependencies(img_meta.dependences)
 
@@ -225,13 +219,10 @@ module.exports = function(grunt) {
 
             var current_grunt_task = this.nameArgs;
             var current_grunt_opt = this.options();
-            if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-                entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
-            }
-            if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
-                entry.load_dependencies([user_config.project_dir+"/../config.json"]);
-            }
-            entry.load_dependencies([in_file, __filename]);
+            entry.append_dependency(process.cwd()+"/Gruntfile.js")
+            entry.append_dependency(user_config.project_dir+"/../config.json")
+            entry.append_dependency(in_file)
+            entry.append_dependency(__filename)
 
             entry.require_task(current_grunt_task, current_grunt_opt);
             entry.save(meta_file);
@@ -250,9 +241,6 @@ module.exports = function(grunt) {
 
         var paths = options.paths || false;
         var out_dir = options.out_dir || false;
-        var meta_dir = options.meta_dir || false;
-
-        var MetaManager = new meta_factory( process.cwd(), meta_dir );
 
         var map = options.map || {
             /*
@@ -263,6 +251,9 @@ module.exports = function(grunt) {
              }
              */
         }
+
+      var phantomizer = ph_libutil.get("main");
+      var meta_manager = phantomizer.get_meta_manager();
 
         var current_grunt_task = this.nameArgs;
         var current_grunt_opt = this.options();
@@ -275,7 +266,7 @@ module.exports = function(grunt) {
             for( var k in css ){
                 var css_file = css[k];
                 var out_file = out_dir+"/"+path.relative(p, css_file);
-                img_merge_css_file(MetaManager, css_file, out_file, p, map, paths,current_grunt_task,current_grunt_opt);
+                img_merge_css_file(meta_manager, css_file, out_file, p, map, paths,current_grunt_task,current_grunt_opt);
 
             }
         }
@@ -283,27 +274,24 @@ module.exports = function(grunt) {
     });
 
 
-    function img_merge_css_file(MetaManager, in_file, out_file, base_url, map, paths,current_grunt_task,current_grunt_opt){
+    function img_merge_css_file(meta_manager, in_file, out_file, base_url, map, paths,current_grunt_task,current_grunt_opt){
         var user_config = grunt.config();
         var css_content = grunt.file.read(in_file);
-        var entry = MetaManager.create([]);
+        var entry = meta_manager.create([]);
 
         var abs_url = "/"+path.relative(base_url, in_file);
         var css_base_url = path.dirname(abs_url)+"/";
 
-        var p_html_entry = MetaManager.load( abs_url+"" );
+        var p_html_entry = meta_manager.load( abs_url+"" );
         entry.load_dependencies(p_html_entry.dependences);
 
-        var new_css_content = apply_img_merge(MetaManager, css_content, css_base_url, map, paths, entry);
+        var new_css_content = apply_img_merge(meta_manager, css_content, css_base_url, map, paths, entry);
 
         if( new_css_content != css_content ){
-            if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-                entry.load_dependencies([process.cwd()+"/Gruntfile.js"]);
-            }
-            if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
-                entry.load_dependencies([user_config.project_dir+"/../config.json"]);
-            }
-            entry.load_dependencies([in_file, __filename]);
+            entry.append_dependency(process.cwd()+"/Gruntfile.js");
+            entry.append_dependency(user_config.project_dir+"/../config.json");
+            entry.append_dependency(__filename);
+            entry.append_dependency(in_file);
 
             entry.require_task(current_grunt_task, current_grunt_opt);
             entry.save(abs_url+"");
@@ -314,7 +302,7 @@ module.exports = function(grunt) {
             grunt.log.ok("Nothing to change\n\t"+out_file);
         }
     }
-    function apply_img_merge(MetaManager, css_content, base_url, map, paths, entry){
+    function apply_img_merge(meta_manager, css_content, base_url, map, paths, entry){
 
         var img_rules = HtmlUtils.find_img_rules(css_content, base_url);
         for( var n in img_rules ){
@@ -331,7 +319,7 @@ module.exports = function(grunt) {
                             var r = new RegExp("background(-image)?\\s*:\\s*url\\s*(\\(\\s*[\"'][^\"'']+[\"']\\s*\\))(\\s+[0-9]px)?(\\s+[0-9]px)?[^;]*;","i")
                             var matches = node.img.match(r)
                             if( matches != null ){
-                                var img_meta = MetaManager.load(tgt_img+"")
+                                var img_meta = meta_manager.load(tgt_img+"")
 
                                 entry.load_dependencies(img_meta.dependences);
 

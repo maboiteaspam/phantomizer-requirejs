@@ -27,7 +27,6 @@ http://github.com/maboiteaspam/phantomizer
             project_dir: '',
             vendors_path: '',
             almond_path: '',
-            meta_dir: '',
             meta_file: '',
 
             out: '',
@@ -48,7 +47,6 @@ http://github.com/maboiteaspam/phantomizer
       options: {                 // Target options
             src_paths: [],
             project_dir: '',
-            meta_dir: '',
             meta_file: '',
 
             out: '',
