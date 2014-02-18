@@ -26,7 +26,6 @@ module.exports = function(grunt) {
     var vendors_path = options.vendors_path;
     var wbm_path = options.wbm_path;
     var almond_path = options.almond_path;
-    var project_dir = options.project_dir;
 
     var src_paths = options.src_paths || [];
     grunt.verbose.writeflags(options, 'Options');
@@ -58,7 +57,6 @@ module.exports = function(grunt) {
 
       var excluded_options = [
         'src_paths',
-        'project_dir',
         'almond_path',
         'vendors_path',
         'meta_file'
@@ -86,7 +84,7 @@ module.exports = function(grunt) {
             entry.load_dependencies([msg]);
           }
 
-          entry.load_dependencies([process.cwd()+"/Gruntfile.js",project_dir+"/../config.json",__filename]);
+          entry.load_dependencies([__filename]);
 
           entry.require_task(current_grunt_task, current_grunt_opt);
           entry.save(meta_file, function(err){
@@ -127,7 +125,6 @@ module.exports = function(grunt) {
     var HtmlUtils = ph_libutil.html_utils;
 
     var options = this.options();
-    var user_config = grunt.config();
 
     var paths = options.paths || false;
     var out_file = options.out_file || false;
@@ -221,8 +218,6 @@ module.exports = function(grunt) {
 
       var current_grunt_task = this.nameArgs;
       var current_grunt_opt = this.options();
-      entry.append_dependency(process.cwd()+"/Gruntfile.js")
-      entry.append_dependency(user_config.project_dir+"/../config.json")
       entry.append_dependency(in_file)
       entry.append_dependency(__filename)
 
@@ -278,7 +273,6 @@ module.exports = function(grunt) {
 
 
   function img_merge_css_file(meta_manager, in_file, out_file, base_url, map, paths,current_grunt_task,current_grunt_opt){
-    var user_config = grunt.config();
     var css_content = grunt.file.read(in_file);
     var entry = meta_manager.create([]);
 
@@ -291,8 +285,6 @@ module.exports = function(grunt) {
     var new_css_content = apply_img_merge(meta_manager, css_content, css_base_url, map, paths, entry);
 
     if( new_css_content != css_content ){
-      entry.append_dependency(process.cwd()+"/Gruntfile.js");
-      entry.append_dependency(user_config.project_dir+"/../config.json");
       entry.append_dependency(__filename);
       entry.append_dependency(in_file);
 
